@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eyesbot · Inside Contabilidade</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
+:root{
+--bg:#ffffff;--s:#ffffff;--s2:#f9f9fb;--s3:#e4e4e7;
+--t1:#09090b;--t2:#52525b;--t3:#a1a1aa;--t4:#d4d4d8;
+--ac:#d4580a;--ac2:#b94a08;--acl:#fdf3eb;--aclh:#fbe8d5;--acbg:linear-gradient(135deg,#d4580a 0%,#b94a08 100%);
+--r:#b91c1c;--rl:#fef2f2;--w:#b45309;--wl:#fffbeb;
+--b:#1d4ed8;--bl:#eff6ff;--ok:#15803d;--okl:#f0fdf4;--p:#6d28d9;--pl:#f5f3ff;
+--brd:#e4e4e7;--sh:0 1px 3px rgba(0,0,0,.04),0 1px 2px rgba(0,0,0,.02);
+--f:'Inter',system-ui,-apple-system,sans-serif;--m:'JetBrains Mono',monospace;
+--radius:8px;
+}
+/* dark mode disabled — always light/white */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body{font-family:var(--f);background:#ffffff !important;color:var(--t1);font-size:13px;line-height:1.5;overflow:hidden}
+::selection{background:var(--ac);color:#fff}
+button{font-family:inherit;border:none;background:none;cursor:pointer;color:inherit}
+input{font-family:inherit}
+
+.app{display:flex;height:100vh}
+
+/* SIDEBAR */
+.sb{width:244px;background:var(--s);border-right:1px solid var(--brd);display:flex;flex-direction:column;flex-shrink:0}
+.sb-top{padding:20px 18px 16px;border-bottom:1px solid var(--brd)}
+.sb-logo{display:flex;align-items:center;gap:10px}
+.logo-mark{width:36px;height:36px;border-radius:var(--radius);flex-shrink:0;overflow:hidden}
+.logo-mark img{width:100%;height:100%;object-fit:contain}
+.sb-name{font-size:11px;font-weight:800;color:var(--ac);letter-spacing:.02em;text-transform:uppercase;line-height:1.2}
+.sb-powered{font-size:9px;color:var(--t3);font-weight:500;margin-top:2px;letter-spacing:.01em}
+
+.sb-section{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;padding:20px 18px 6px}
+.sb-nav{padding:4px 10px}
+.sb-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:6px;font-size:13px;font-weight:500;color:var(--t2);transition:all .12s;width:100%;text-align:left;letter-spacing:-.01em}
+.sb-item:hover{background:var(--s2);color:var(--t1)}
+.sb-item.on{background:var(--acl);color:var(--ac);font-weight:600}
+.sb-item svg{width:15px;height:15px;flex-shrink:0;opacity:.5}
+.sb-item.on svg{opacity:1}
+.sb-count{margin-left:auto;min-width:18px;height:18px;display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:10px;font-weight:700;padding:0 5px}
+.sb-count.alert{background:var(--r);color:#fff}
+.sb-count.warn{background:var(--ac);color:#fff}
+
+.sb-foot{margin-top:auto;padding:14px 18px;border-top:1px solid var(--brd);display:flex;align-items:center;gap:10px}
+.av{width:30px;height:30px;border-radius:50%;background:var(--acbg);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;letter-spacing:.02em}
+.sb-foot-name{font-size:12px;font-weight:600;letter-spacing:-.01em}
+.sb-foot-role{font-size:10px;color:var(--t3)}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:52px;background:var(--s);border-bottom:1px solid var(--brd);display:flex;align-items:center;padding:0 24px;gap:14px;flex-shrink:0}
+.topbar-title{font-size:15px;font-weight:700;letter-spacing:-.02em}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.status-live{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--ac);letter-spacing:.01em}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--ac);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.period{font-size:11px;color:var(--t3);font-family:var(--m);letter-spacing:.02em}
+
+/* NOTIF */
+.notif-wrap{position:relative}
+.notif-trigger{width:34px;height:34px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;transition:.1s;position:relative}
+.notif-trigger:hover{background:var(--s2)}
+.notif-trigger svg{width:16px;height:16px;color:var(--t2)}
+.notif-badge{position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--r);border:2px solid var(--s)}
+.notif-panel{position:absolute;top:42px;right:0;width:360px;background:var(--s);border:1px solid var(--brd);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.1);display:none;z-index:200;overflow:hidden}
+.notif-panel.open{display:block;animation:slideDown .15s ease}
+@keyframes slideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.notif-hdr{padding:12px 16px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between}
+.notif-hdr h3{font-size:13px;font-weight:700;letter-spacing:-.01em}
+.notif-row{display:flex;gap:10px;padding:11px 16px;border-bottom:1px solid var(--brd);font-size:12px;line-height:1.45;transition:.08s}
+.notif-row:hover{background:var(--s2)}
+.notif-row:last-child{border:none}
+.notif-ind{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.notif-ind.crit{background:var(--r)}.notif-ind.warn{background:var(--w)}.notif-ind.info{background:var(--b)}.notif-ind.done{background:var(--ok)}.notif-ind.accent{background:var(--ac)}
+.notif-time{font-size:10px;color:var(--t3);margin-top:2px}
+
+.content{flex:1;overflow-y:auto;padding:24px 28px 48px;scroll-behavior:smooth}
+.pg{display:none;animation:fadeIn .2s ease}
+.pg.on{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* COMPONENTS */
+.row{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.col{flex:1;min-width:170px}
+.kpi{padding:16px 18px;background:var(--s);border:1px solid var(--brd);border-radius:10px;box-shadow:var(--sh);transition:.15s}
+.kpi:hover{box-shadow:0 4px 12px rgba(0,0,0,.06);transform:translateY(-1px)}
+.kpi-label{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em}
+.kpi-value{font-size:24px;font-weight:800;margin-top:4px;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.kpi-sub{font-size:11px;margin-top:3px;font-weight:500}
+.up{color:var(--ok)}.dn{color:var(--r)}.mut{color:var(--t3)}.accent{color:var(--ac)}
+
+.card{background:var(--s);border:1px solid var(--brd);border-radius:10px;box-shadow:var(--sh);overflow:hidden;margin-bottom:16px}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--brd)}
+.card-title{font-size:13px;font-weight:700;letter-spacing:-.01em}
+.card-body{padding:16px 18px}
+
+.pill{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:600;white-space:nowrap;letter-spacing:.01em}
+.pill::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+.p-ok{background:var(--okl);color:var(--ok)}.p-w{background:var(--wl);color:var(--w)}.p-r{background:var(--rl);color:var(--r)}.p-b{background:var(--bl);color:var(--b)}.p-p{background:var(--pl);color:var(--p)}.p-n{background:var(--s2);color:var(--t3)}.p-ac{background:var(--acl);color:var(--ac)}
+
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:9px 16px;font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;background:var(--s2);border-bottom:1px solid var(--brd)}
+td{padding:10px 16px;border-top:1px solid var(--brd);font-size:12px;vertical-align:middle}
+tr{transition:.08s}
+tr:hover td{background:var(--s2)}
+tr.expandable{cursor:pointer}
+.mono{font-family:var(--m);font-size:11px;color:var(--t2)}
+.bold{font-weight:600}
+.muted{font-size:11px;color:var(--t3)}
+
+.bar{height:4px;background:var(--s3);border-radius:2px;overflow:hidden;flex:1}
+.bar-fill{height:100%;border-radius:2px;transition:width .4s ease}
+.bar-row{display:flex;align-items:center;gap:8px}
+.bar-num{font-size:11px;font-weight:700;width:30px;text-align:right;font-variant-numeric:tabular-nums}
+
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.flt{padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600;background:var(--s);border:1px solid var(--brd);color:var(--t2);transition:.12s}
+.flt:hover{border-color:var(--ac);color:var(--ac)}
+.flt.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.flt .n{font-weight:400;opacity:.65;margin-left:3px}
+
+.detail-row{display:none}
+.detail-row.show{display:table-row}
+.detail-row td{background:var(--s2);padding:14px 18px}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;font-size:12px}
+.doc-line{display:flex;align-items:center;gap:7px;padding:3px 0}
+.doc-line .ind{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.doc-line.ok .ind{background:var(--ok)}.doc-line.miss .ind{background:var(--r)}
+
+.search-box{display:flex;align-items:center;gap:8px;padding:9px 14px;border:1px solid var(--brd);border-radius:var(--radius);background:var(--s);max-width:320px}
+.search-box svg{width:14px;height:14px;color:var(--t3);flex-shrink:0}
+.search-box input{border:none;outline:none;background:none;font-size:12px;width:100%;color:var(--t1)}
+
+/* TIMELINE */
+.timeline{position:relative;padding-left:28px}
+.timeline::before{content:'';position:absolute;left:8px;top:12px;bottom:12px;width:1.5px;background:var(--brd)}
+.tl-entry{position:relative;padding:12px 0}
+.tl-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--brd);background:var(--s);position:absolute;left:-28px;top:16px;z-index:1}
+.tl-dot.done{background:var(--ok);border-color:var(--ok)}.tl-dot.soon{background:var(--ac);border-color:var(--ac)}.tl-dot.late{background:var(--r);border-color:var(--r)}
+.tl-card{background:var(--s);border:1px solid var(--brd);border-radius:var(--radius);padding:12px 16px;transition:.15s;box-shadow:var(--sh)}
+.tl-card:hover{border-color:var(--ac);box-shadow:0 0 0 2px var(--acl)}
+.tl-card h4{font-size:12px;font-weight:700;letter-spacing:-.01em}
+.tl-card p{font-size:11px;color:var(--t3);margin-top:2px}
+.tl-tags{display:flex;gap:8px;margin-top:6px;align-items:center;flex-wrap:wrap}
+
+/* CHAT */
+.chat-frame{max-width:380px}
+.chat-container{border-radius:10px;overflow:hidden;border:1px solid var(--brd);box-shadow:var(--sh)}
+.chat-top{background:#075e54;color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px}
+.chat-top .name{font-size:13px;font-weight:600}.chat-top .sub{font-size:10px;opacity:.65}
+.chat-messages{padding:10px;background:#e5ddd5;min-height:360px;max-height:440px;overflow-y:auto;display:flex;flex-direction:column;gap:3px}
+/* chat always light */
+.msg{max-width:82%;padding:7px 11px;border-radius:8px;font-size:12px;line-height:1.45;animation:msgSlide .2s ease}
+@keyframes msgSlide{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.msg-in{background:#fff;align-self:flex-start;border-bottom-left-radius:2px}
+/* msg-in always light */
+.msg-out{background:#dcf8c6;align-self:flex-end;border-bottom-right-radius:2px}
+/* msg-out always light */
+.msg-time{font-size:10px;color:#999;text-align:right;margin-top:2px}
+.msg-file{display:inline-flex;align-items:center;gap:5px;background:rgba(0,0,0,.06);padding:5px 10px;border-radius:6px;font-size:11px;font-weight:500;margin-top:3px}
+
+/* FLOW */
+.flow-stack{display:flex;flex-direction:column;align-items:center;gap:0}
+.flow-node{display:flex;align-items:center;gap:14px;background:var(--s);border:1.5px solid var(--brd);border-radius:10px;padding:14px 20px;width:100%;max-width:540px;transition:.2s;box-shadow:var(--sh)}
+.flow-node:hover{border-color:var(--ac);transform:scale(1.01);box-shadow:0 6px 16px rgba(0,0,0,.06)}
+.flow-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;font-weight:700;color:#fff}
+.flow-node h4{font-size:12px;font-weight:700;letter-spacing:-.01em}.flow-node p{font-size:11px;color:var(--t3)}
+.flow-line{width:1.5px;height:16px;background:var(--ac);opacity:.35}
+
+/* COMPARE */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.compare-col{background:var(--s);border:1px solid var(--brd);border-radius:10px;padding:20px 22px;box-shadow:var(--sh)}
+.compare-col.highlight{border-color:var(--ac);background:var(--acl)}
+.compare-head{font-size:14px;font-weight:700;margin-bottom:14px;letter-spacing:-.02em}
+.compare-row{display:flex;align-items:baseline;gap:8px;margin-bottom:8px;font-size:12px;line-height:1.5}
+
+.hero-banner{background:var(--acbg);border-radius:10px;padding:24px 28px;color:#fff;margin-bottom:16px}
+.hero-eyebrow{font-size:10px;opacity:.6;font-weight:600;text-transform:uppercase;letter-spacing:.08em}
+.hero-number{font-size:32px;font-weight:900;margin-top:4px;letter-spacing:-.04em}
+.hero-desc{font-size:12px;opacity:.8;margin-top:8px;line-height:1.6;max-width:560px}
+
+/* SEG TAGS */
+.seg{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:.02em}
+.seg-pet{background:#fef3c7;color:#854d0e}
+.seg-vet{background:#dbeafe;color:#1e40af}
+.seg-com{background:#e0e7ff;color:#3730a3}
+.seg-srv{background:#fce7f3;color:#9d174d}
+.seg-mei{background:var(--s2);color:var(--t3)}
+.seg-med{background:var(--okl);color:var(--ok)}
+
+/* TABS */
+.tab-bar{display:flex;gap:0;border-bottom:1px solid var(--brd);margin-bottom:16px}
+.tab-item{padding:9px 18px;font-size:12px;font-weight:600;color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;transition:.12s;letter-spacing:-.01em}
+.tab-item:hover{color:var(--t1)}
+.tab-item.on{color:var(--ac);border-bottom-color:var(--ac)}
+
+.checklist-item{display:flex;gap:10px;font-size:12px;line-height:1.5;padding:6px 0}
+.check-mark{width:18px;height:18px;border-radius:4px;background:var(--acl);color:var(--ac);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:700;margin-top:1px}
+
+@media(max-width:700px){.sb{display:none}.content{padding:16px}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<nav class="sb">
+  <div class="sb-top">
+    <div class="sb-logo">
+      <div>
+        <svg width="175" height="40" viewBox="0 0 175 40" xmlns="http://www.w3.org/2000/svg">
+          <path d="M28 1 H2 V39 H28" fill="none" stroke="#e2691a" stroke-width="3.5" stroke-linejoin="miter"/>
+          <text x="33" y="18" font-family="Inter,system-ui,sans-serif" font-size="16" font-weight="800" fill="#e2691a">INSIDE</text>
+          <text x="33" y="34" font-family="Inter,system-ui,sans-serif" font-size="11.5" font-weight="700" fill="#e2691a">CONTABILIDADE</text>
+        </svg>
+        <div class="sb-powered">powered by Eyesbot</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sb-section">Operacional</div>
+  <div class="sb-nav" id="navList">
+    <button class="sb-item on" data-pg="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Painel</button>
+    <button class="sb-item" data-pg="docs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Documentos<span class="sb-count warn">24</span></button>
+    <button class="sb-item" data-pg="obr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Obrigacoes<span class="sb-count alert">3</span></button>
+    <button class="sb-item" data-pg="wpp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>WhatsApp IA</button>
+    <button class="sb-item" data-pg="cli"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Clientes</button>
+  </div>
+
+  <div class="sb-section">Inteligencia</div>
+  <div class="sb-nav">
+    <button class="sb-item" data-pg="int"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Fluxo IA</button>
+    <button class="sb-item" data-pg="fin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Honorarios</button>
+    <button class="sb-item" data-pg="roi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>ROI</button>
+  </div>
+
+  <div class="sb-foot">
+    <div class="av">RC</div>
+    <div><div class="sb-foot-name">Rogerio Caires</div><div class="sb-foot-role">Administrador</div></div>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="topbar">
+    <span class="topbar-title" id="pgTitle">Painel</span>
+    <div class="topbar-right">
+      <span class="period">Competencia 10/2026</span>
+      <span class="status-live"><span class="status-dot"></span>IA Ativa</span>
+      <div class="notif-wrap">
+        <button class="notif-trigger" id="notifBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <div class="notif-badge"></div>
+        </button>
+        <div class="notif-panel" id="notifPanel">
+          <div class="notif-hdr"><h3>Notificacoes</h3><button class="muted" style="cursor:pointer;color:var(--ac)">Marcar lidas</button></div>
+          <div class="notif-row"><div class="notif-ind crit"></div><div><strong>Pet Shop Amigo Fiel</strong> — 0 documentos, 3 cobracas sem resposta. Escalar.<div class="notif-time">Ha 18 min</div></div></div>
+          <div class="notif-row"><div class="notif-ind warn"></div><div><strong>DCTF Mensal</strong> vence em 5 dias — 3 clientes sem dados<div class="notif-time">Ha 30 min</div></div></div>
+          <div class="notif-row"><div class="notif-ind accent"></div><div><strong>Reforma Tributaria</strong> — 12 clientes VET precisam diagnostico IBS/CBS<div class="notif-time">Ha 1h</div></div></div>
+          <div class="notif-row"><div class="notif-ind info"></div><div><strong>Dra. Camila Oliveira</strong> enviou extrato bancario via WhatsApp<div class="notif-time">Ha 1h</div></div></div>
+          <div class="notif-row"><div class="notif-ind done"></div><div>DAS de 68 clientes SN gerado e enviado automaticamente<div class="notif-time">Ha 2h</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+
+<!-- PAINEL -->
+<div class="pg on" id="pg-dash">
+  <div class="row">
+    <div class="col"><div class="kpi"><div class="kpi-label">Clientes ativos</div><div class="kpi-value">127</div><div class="kpi-sub mut">68 SN · 28 LP · 31 MEI</div></div></div>
+    <div class="col"><div class="kpi"><div class="kpi-label">Docs recebidos</div><div class="kpi-value">94<span style="font-size:13px;color:var(--t3);font-weight:400"> / 127</span></div><div class="kpi-sub up">74% entregaram — era 45%</div></div></div>
+    <div class="col"><div class="kpi"><div class="kpi-label">Obrigacoes no prazo</div><div class="kpi-value" style="color:var(--ok)">98%</div><div class="kpi-sub up">Zero multas este mes</div></div></div>
+    <div class="col"><div class="kpi"><div class="kpi-label">Horas economizadas</div><div class="kpi-value" style="color:var(--ac)">62h</div><div class="kpi-sub mut">Equivalente a 2 funcionarios</div></div></div>
+    <div class="col"><div class="kpi"><div class="kpi-label">Inadimplencia</div><div class="kpi-value" style="color:var(--r)">R$ 12k</div><div class="kpi-sub dn">6 clientes atrasados</div></div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:16px">
+    <div class="card"><div class="card-header"><span class="card-title">Atividade recente</span><span class="muted">Ultimas 24h</span></div>
+      <div style="padding:0">
+        <div class="notif-row"><div class="notif-ind crit"></div><div><strong>Pet Shop Amigo Fiel</strong> — 0 docs, 3a cobranca sem resposta. Ligar.<div class="notif-time">09:41</div></div></div>
+        <div class="notif-row"><div class="notif-ind accent"></div><div><strong>Reforma Tributaria 2026</strong> — 12 clientes VET precisam diagnostico IBS/CBS<div class="notif-time">09:30</div></div></div>
+        <div class="notif-row"><div class="notif-ind done"></div><div>DAS de <strong>68 clientes</strong> SN gerado e enviado via WhatsApp<div class="notif-time">08:00</div></div></div>
+        <div class="notif-row"><div class="notif-ind info"></div><div><strong>Dra. Camila Oliveira</strong> — extrato recebido e classificado via WhatsApp<div class="notif-time">09:16</div></div></div>
+        <div class="notif-row"><div class="notif-ind done"></div><div>eSocial folha Nov/2026 transmitido — 96 clientes (exceto MEIs)<div class="notif-time">Ontem</div></div></div>
+        <div class="notif-row"><div class="notif-ind info"></div><div><strong>3 MEIs</strong> solicitaram desenquadramento — formularios iniciados<div class="notif-time">Ontem</div></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="card"><div class="card-header"><span class="card-title">Por segmento</span></div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+          <div><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:11px;font-weight:500">PET / VET</span><span style="font-size:11px;font-weight:700">42</span></div><div class="bar-row"><div class="bar"><div class="bar-fill" style="width:33%;background:var(--ac)"></div></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:11px;font-weight:500">Comercio</span><span style="font-size:11px;font-weight:700">31</span></div><div class="bar-row"><div class="bar"><div class="bar-fill" style="width:24%;background:var(--b)"></div></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:11px;font-weight:500">Servicos</span><span style="font-size:11px;font-weight:700">23</span></div><div class="bar-row"><div class="bar"><div class="bar-fill" style="width:18%;background:var(--p)"></div></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:11px;font-weight:500">Medicos</span><span style="font-size:11px;font-weight:700">18</span></div><div class="bar-row"><div class="bar"><div class="bar-fill" style="width:14%;background:var(--ok)"></div></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:11px;font-weight:500">MEI</span><span style="font-size:11px;font-weight:700">13</span></div><div class="bar-row"><div class="bar"><div class="bar-fill" style="width:10%;background:var(--t3)"></div></div></div></div>
+        </div>
+      </div>
+      <div class="card"><div class="card-header"><span class="card-title">Tempo da equipe</span></div>
+        <div class="card-body" style="display:flex;align-items:flex-end;gap:12px;height:80px">
+          <div style="flex:1;text-align:center"><div style="font-size:10px;font-weight:700;color:var(--t3);margin-bottom:3px">95h</div><div style="height:60px;background:var(--s3);border-radius:4px"></div><div style="font-size:10px;color:var(--t3);margin-top:4px">Manual</div></div>
+          <div style="flex:1;text-align:center"><div style="font-size:10px;font-weight:700;color:var(--ac);margin-bottom:3px">33h</div><div style="height:21px;background:var(--ac);border-radius:4px"></div><div style="font-size:10px;color:var(--t3);margin-top:4px">Com IA</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DOCUMENTOS -->
+<div class="pg" id="pg-docs">
+  <div class="row">
+    <div class="col"><div class="kpi"><div class="kpi-label">Recebidos</div><div class="kpi-value" style="color:var(--ok)">94</div><div class="kpi-sub up">Via WhatsApp automatico</div></div></div>
+    <div class="col"><div class="kpi"><div class="kpi-label">Pendentes</div><div class="kpi-value" style="color:var(--ac)">24</div><div class="kpi-sub dn">4 atrasados +7 dias</div></div></div>
+    <div class="col"><div class="kpi"><div class="kpi-label">Classificados por IA</div><div class="kpi-value" style="color:var(--b)">94</div><div class="kpi-sub mut">100% automatico</div></div></div>
+    <div class="col"><div class="kpi"><div class="kpi-label">Economia</div><div class="kpi-value" style="color:var(--ac)">42h</div><div class="kpi-sub up">So em cobranca de docs</div></div></div>
+  </div>
+  <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
+    <div class="search-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="Buscar cliente..." id="docSearch" oninput="filterDocs(currentFilter)"></div>
+    <div class="filters" id="docFilters">
+      <button class="flt on" data-f="all" onclick="filterDocs('all',this)">Todos <span class="n">127</span></button>
+      <button class="flt" data-f="ok" onclick="filterDocs('ok',this)">Completos <span class="n">94</span></button>
+      <button class="flt" data-f="pend" onclick="filterDocs('pend',this)">Pendentes <span class="n">24</span></button>
+      <button class="flt" data-f="late" onclick="filterDocs('late',this)">Atrasados <span class="n">4</span></button>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:4px"><div style="overflow-x:auto">
+    <table><thead><tr><th>Cliente</th><th>Segmento</th><th>Regime</th><th>Progresso</th><th>Status</th><th>Acao da IA</th></tr></thead>
+      <tbody id="docTbody"></tbody>
+    </table>
+  </div></div>
+  <p class="muted" style="text-align:center;padding:8px 0">Clique numa linha para expandir os documentos individuais</p>
+</div>
+
+<!-- OBRIGACOES -->
+<div class="pg" id="pg-obr">
+  <div class="row">
+    <div class="col"><div class="kpi"><div class="kpi-label">Entregues no prazo</div><div class="kpi-value" style="color:var(--ok)">23</div><div class="kpi-sub up">Sem multas</div></div></div>
+    <div class="col"><div class="kpi"><div class="kpi-label">Proximos 7 dias</div><div class="kpi-value" style="color:var(--ac)">5</div><div class="kpi-sub accent">Atencao</div></div></div>
+    <div class="col"><div class="kpi"><div class="kpi-label">Multas evitadas</div><div class="kpi-value" style="color:var(--ok)">R$ 14.2k</div><div class="kpi-sub up">Ultimos 3 meses</div></div></div>
+  </div>
+  <div class="card"><div class="card-header"><span class="card-title">Timeline — Novembro 2026</span></div>
+    <div class="card-body"><div class="timeline">
+      <div class="tl-entry"><div class="tl-dot done"></div><div class="tl-card"><h4>eSocial — Folha</h4><p>96 clientes (excl. MEIs) — Transmitido automaticamente</p><div class="tl-tags"><span class="pill p-ok">Enviado</span><span class="mono">15/Nov</span></div></div></div>
+      <div class="tl-entry"><div class="tl-dot done"></div><div class="tl-card"><h4>DARF — IRRF</h4><p>28 clientes LP — Calculado e guias geradas</p><div class="tl-tags"><span class="pill p-ok">Calculado</span><span class="mono">20/Nov</span></div></div></div>
+      <div class="tl-entry"><div class="tl-dot soon"></div><div class="tl-card" style="border-color:var(--ac)"><h4>DCTF Mensal <span style="color:var(--r);font-size:11px;font-weight:700">— em 5 dias</span></h4><p>28 clientes LP — 3 ainda sem dados completos</p><div class="tl-tags"><span class="pill p-w">3 incompletos</span><span class="mono">18/Nov</span></div></div></div>
+      <div class="tl-entry"><div class="tl-dot soon"></div><div class="tl-card"><h4>DAS — Simples Nacional</h4><p>68 clientes SN + 31 MEIs — Guias geradas e enviadas via WhatsApp</p><div class="tl-tags"><span class="pill p-ok">Gerado</span><span class="mono">20/Nov</span></div></div></div>
+      <div class="tl-entry"><div class="tl-dot soon"></div><div class="tl-card"><h4>FGTS Digital</h4><p>96 clientes — Processando</p><div class="tl-tags"><span class="pill p-ac">Processando</span><span class="mono">20/Nov</span></div></div></div>
+      <div class="tl-entry"><div class="tl-dot"></div><div class="tl-card"><h4>SPED Fiscal (ICMS/IPI)</h4><p>28 clientes LP</p><div class="tl-tags"><span class="pill p-b">Em andamento</span><span class="mono">25/Nov</span></div></div></div>
+      <div class="tl-entry"><div class="tl-dot"></div><div class="tl-card"><h4>Diagnostico IBS/CBS — Reforma Tributaria</h4><p>42 clientes PET/VET — Revisao de enquadramento</p><div class="tl-tags"><span class="pill p-ac">Novo</span><span class="mono">30/Nov</span></div></div></div>
+      <div class="tl-entry"><div class="tl-dot"></div><div class="tl-card"><h4>Balancete Mensal</h4><p>127 clientes — Aguardando docs</p><div class="tl-tags"><span class="pill p-n">Aguardando</span><span class="mono">30/Nov</span></div></div></div>
+    </div></div>
+  </div>
+</div>
+
+<!-- WHATSAPP -->
+<div class="pg" id="pg-wpp">
+  <div class="row">
+    <div class="col"><div class="kpi"><div class="kpi-label">Mensagens hoje</div><div class="kpi-value">47</div><div class="kpi-sub mut">Enviadas e recebidas</div></div></div>
+    <div class="col"><div class="kpi"><div class="kpi-label">Docs coletados hoje</div><div class="kpi-value" style="color:var(--ok)">12</div><div class="kpi-sub up">Classificados pela IA</div></div></div>
+    <div class="col"><div class="kpi"><div class="kpi-label">Tempo de resposta</div><div class="kpi-value" style="color:var(--ac)">8s</div><div class="kpi-sub up">vs 4h manual</div></div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start">
+    <div>
+      <div class="chat-frame"><div class="chat-container">
+        <div class="chat-top"><div class="av" style="background:rgba(255,255,255,.15);font-size:11px">IC</div><div><div class="name">Inside Contabilidade</div><div class="sub">Assistente IA — Online 24h</div></div></div>
+        <div class="chat-messages" id="chatF"></div>
+      </div></div>
+      <p class="muted" style="text-align:center;margin-top:8px">Simulacao: Dra. Camila Oliveira — Clinica VET</p>
+    </div>
+    <div>
+      <div class="card"><div class="card-header"><span class="card-title">O que a IA faz automaticamente</span></div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:6px">
+          <div class="checklist-item"><div class="check-mark">&#10003;</div><div><strong>Cobra documentos</strong> — lembretes por competencia, escalada automatica. Atendimento humanizado.</div></div>
+          <div class="checklist-item"><div class="check-mark">&#10003;</div><div><strong>Recebe e classifica</strong> — OCR identifica tipo (extrato, NF, pro-labore), valida e salva na pasta</div></div>
+          <div class="checklist-item"><div class="check-mark">&#10003;</div><div><strong>Confirma na hora</strong> — mostra ao cliente quais docs faltam em tempo real</div></div>
+          <div class="checklist-item"><div class="check-mark">&#10003;</div><div><strong>Escala para equipe</strong> — 3 tentativas sem resposta, notifica para ligar pessoalmente</div></div>
+          <div class="checklist-item"><div class="check-mark">&#10003;</div><div><strong>Envia DAS e guias</strong> — gera boleto e envia automaticamente</div></div>
+          <div class="checklist-item"><div class="check-mark">&#10003;</div><div><strong>Cobra honorarios</strong> — lembrete antes e depois do vencimento, envia PIX</div></div>
+          <div class="checklist-item"><div class="check-mark">&#10003;</div><div><strong>Abertura e desenquadramento</strong> — coleta dados de novos clientes e MEIs migrando</div></div>
+        </div>
+      </div>
+      <div class="card"><div class="card-header"><span class="card-title" style="color:var(--ac)">Integracao com Hubstrom</span><span class="pill p-ok">Conectado</span></div>
+        <div class="card-body" style="font-size:12px;color:var(--t2);line-height:1.6">Documentos recebidos via WhatsApp sao classificados e sincronizados automaticamente com o portal Hubstrom. A equipe acessa tudo no portal sem precisar redownload.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CLIENTES -->
+<div class="pg" id="pg-cli">
+  <div class="row">
+    <div class="col"><div class="kpi"><div class="kpi-label">Clientes ativos</div><div class="kpi-value">127</div><div class="kpi-sub mut">+8 nos ultimos 90 dias</div></div></div>
+    <div class="col"><div class="kpi"><div class="kpi-label">Ticket medio</div><div class="kpi-value">R$ 1.244</div><div class="kpi-sub mut">por mes</div></div></div>
+    <div class="col"><div class="kpi"><div class="kpi-label">PET / VET</div><div class="kpi-value" style="color:var(--ac)">33%</div><div class="kpi-sub accent">42 clientes — segmento core</div></div></div>
+    <div class="col"><div class="kpi"><div class="kpi-label">Churn</div><div class="kpi-value" style="color:var(--ok)">1.2%</div><div class="kpi-sub up">Media do setor: 4%</div></div></div>
+  </div>
+  <div class="tab-bar" id="cliTabs">
+    <div class="tab-item on" onclick="switchCliTab('todos',this)">Todos — 127</div>
+    <div class="tab-item" onclick="switchCliTab('pet',this)">PET / VET — 42</div>
+    <div class="tab-item" onclick="switchCliTab('com',this)">Comercio — 31</div>
+    <div class="tab-item" onclick="switchCliTab('srv',this)">Servicos — 23</div>
+    <div class="tab-item" onclick="switchCliTab('med',this)">Medicos — 18</div>
+    <div class="tab-item" onclick="switchCliTab('mei',this)">MEI — 13</div>
+  </div>
+  <div class="card"><div style="overflow-x:auto">
+    <table><thead><tr><th>Cliente</th><th>Segmento</th><th>Regime</th><th>Desde</th><th>Honorario</th><th>Docs</th><th>Status</th></tr></thead>
+      <tbody id="cliTbody"></tbody>
+    </table>
+  </div></div>
+</div>
+
+<!-- FLUXO IA -->
+<div class="pg" id="pg-int">
+  <p style="font-size:12px;color:var(--t3);margin-bottom:20px;letter-spacing:-.01em">Do WhatsApp ao Hubstrom — sem digitacao manual. Cada etapa e automatica.</p>
+  <div class="flow-stack">
+    <div class="flow-node"><div class="flow-icon" style="background:var(--ac)">1</div><div><h4>Cliente envia pelo WhatsApp</h4><p>Extrato, NF, comprovante, recibo — foto ou PDF</p></div></div>
+    <div class="flow-line"></div>
+    <div class="flow-node"><div class="flow-icon" style="background:var(--b)">2</div><div><h4>IA recebe, valida e classifica</h4><p>OCR + IA: tipo, CNPJ, valores, datas. Rejeita ilegivel.</p></div></div>
+    <div class="flow-line"></div>
+    <div class="flow-node"><div class="flow-icon" style="background:var(--p)">3</div><div><h4>Salva na pasta do cliente</h4><p>Organizado: /Cliente/10-2026/Fiscal/extrato_itau.pdf</p></div></div>
+    <div class="flow-line"></div>
+    <div class="flow-node"><div class="flow-icon" style="background:var(--w)">4</div><div><h4>Extrai dados automaticamente</h4><p>Valores, CNPJs, datas, natureza da operacao</p></div></div>
+    <div class="flow-line"></div>
+    <div class="flow-node"><div class="flow-icon" style="background:var(--ac2)">5</div><div><h4>Sincroniza com Hubstrom</h4><p>Dados e PDFs disponiveis no portal — equipe so revisa</p></div></div>
+    <div class="flow-line"></div>
+    <div class="flow-node"><div class="flow-icon" style="background:var(--ok)">6</div><div><h4>Painel atualiza em tempo real</h4><p>Status, progresso, alertas. Visibilidade total sem perguntar.</p></div></div>
+  </div>
+  <div class="hero-banner" style="margin-top:20px">
+    <div class="hero-eyebrow">Tempo eliminado por competencia</div>
+    <div class="hero-number">62 horas / mes</div>
+    <div class="hero-desc">127 clientes multiplicados por 30 minutos cobrando e 15 minutos digitando resulta em 95 horas. Com IA: 33 horas. A equipe foca em planejamento tributario, Reforma Tributaria e consultoria de valor — o atendimento continua personalizado.</div>
+  </div>
+</div>
+
+<!-- HONORARIOS -->
+<div class="pg" id="pg-fin">
+  <div class="row">
+    <div class="col"><div class="kpi"><div class="kpi-label">Faturamento</div><div class="kpi-value">R$ 158k</div><div class="kpi-sub up">+12% vs mes anterior</div></div></div>
+    <div class="col"><div class="kpi"><div class="kpi-label">Recebido</div><div class="kpi-value" style="color:var(--ok)">R$ 146k</div><div class="kpi-sub mut">92%</div></div></div>
+    <div class="col"><div class="kpi"><div class="kpi-label">Inadimplencia</div><div class="kpi-value" style="color:var(--r)">R$ 12k</div><div class="kpi-sub dn">6 clientes</div></div></div>
+    <div class="col"><div class="kpi"><div class="kpi-label">Ticket medio</div><div class="kpi-value">R$ 1.244</div><div class="kpi-sub mut">por cliente / mes</div></div></div>
+  </div>
+  <div class="card"><div class="card-header"><span class="card-title">Inadimplentes</span><span class="muted">IA cobrando automaticamente</span></div><div style="overflow-x:auto">
+    <table><thead><tr><th>Cliente</th><th>Segmento</th><th>Valor</th><th>Atraso</th><th>Acao da IA</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr style="background:var(--rl)"><td class="bold" style="color:var(--r)">Pet Shop Amigo Fiel</td><td><span class="seg seg-pet">PET</span></td><td class="mono">R$ 2.400</td><td style="color:var(--r);font-weight:700">32 dias</td><td style="font-size:12px">3 lembretes — sem resposta</td><td><span class="pill p-r">Escalar</span></td></tr>
+        <tr><td class="bold">Grafica Express</td><td><span class="seg seg-com">Comercio</span></td><td class="mono">R$ 1.800</td><td style="color:var(--r);font-weight:600">18 dias</td><td style="font-size:12px">2 lembretes enviados</td><td><span class="pill p-w">Aguardando</span></td></tr>
+        <tr><td class="bold">Auto Pecas Central</td><td><span class="seg seg-com">Comercio</span></td><td class="mono">R$ 2.100</td><td style="color:var(--w);font-weight:600">12 dias</td><td style="font-size:12px">Link PIX enviado</td><td><span class="pill p-w">Aguardando</span></td></tr>
+        <tr><td class="bold">Barbearia Corte Certo</td><td><span class="seg seg-srv">Servico</span></td><td class="mono">R$ 890</td><td style="color:var(--w)">7 dias</td><td style="font-size:12px">1 lembrete enviado</td><td><span class="pill p-ac">Em cobranca</span></td></tr>
+        <tr><td class="bold">Dra. Fernanda Lima</td><td><span class="seg seg-vet">VET</span></td><td class="mono">R$ 1.600</td><td style="color:var(--w)">5 dias</td><td style="font-size:12px">1 lembrete enviado</td><td><span class="pill p-ac">Em cobranca</span></td></tr>
+        <tr><td class="bold">Joao Silva ME</td><td><span class="seg seg-mei">MEI</span></td><td class="mono">R$ 390</td><td style="color:var(--w)">3 dias</td><td style="font-size:12px">Link PIX enviado</td><td><span class="pill p-ac">Em cobranca</span></td></tr>
+      </tbody>
+    </table>
+  </div></div>
+</div>
+
+<!-- ROI -->
+<div class="pg" id="pg-roi">
+  <div class="compare-grid">
+    <div class="compare-col"><div class="compare-head">Antes — operacao manual</div>
+      <div class="compare-row"><strong>95h / mes</strong> — cobrando documentos e digitando</div>
+      <div class="compare-row"><strong>3 funcionarios</strong> — dedicados so ao operacional</div>
+      <div class="compare-row"><strong>45%</strong> — entregavam documentos no prazo</div>
+      <div class="compare-row"><strong>R$ 4.200 / mes</strong> — em multas evitaveis</div>
+      <div class="compare-row"><strong>25%</strong> — de retrabalho</div>
+      <div class="compare-row"><strong>R$ 18k+</strong> — em ferramentas soltas por mes</div>
+    </div>
+    <div class="compare-col highlight"><div class="compare-head" style="color:var(--ac)">Depois — Eyesbot + Inside</div>
+      <div class="compare-row"><strong>33h / mes</strong> — so revisao e consultoria</div>
+      <div class="compare-row"><strong>IA + 1 pessoa</strong> — faz o operacional de 3</div>
+      <div class="compare-row"><strong>74%</strong> — no prazo, meta 90%+</div>
+      <div class="compare-row"><strong>R$ 0</strong> — em multas, 3 meses consecutivos</div>
+      <div class="compare-row"><strong>2%</strong> — de retrabalho</div>
+      <div class="compare-row"><strong>R$ 7k / mes</strong> — tudo incluso</div>
+    </div>
+  </div>
+  <div class="hero-banner"><div class="hero-eyebrow">Economia total estimada</div><div class="hero-number">R$ 15.400 / mes</div><div class="hero-desc">R$ 11 mil em ferramentas eliminadas mais R$ 4.200 em multas evitadas. 62 horas liberadas significam que a equipe pode focar em planejamento tributario, Reforma Tributaria e consultoria de alto valor — ou atender mais 30 a 40 clientes novos sem contratar.</div></div>
+</div>
+
+  </div>
+</div>
+</div>
+
+<script>
+const pgNames={dash:'Painel',docs:'Documentos',obr:'Obrigacoes',wpp:'WhatsApp IA',cli:'Clientes',int:'Fluxo IA',fin:'Honorarios',roi:'ROI'};
+document.querySelectorAll('.sb-item').forEach(btn=>{
+  btn.addEventListener('click',function(){
+    const pg=this.dataset.pg;
+    document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+    document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('on'));
+    document.getElementById('pg-'+pg).classList.add('on');
+    this.classList.add('on');
+    document.getElementById('pgTitle').textContent=pgNames[pg]||'Painel';
+    if(pg==='wpp'&&!window._chatStarted){startChat();window._chatStarted=true}
+  });
+});
+
+document.getElementById('notifBtn').addEventListener('click',function(e){e.stopPropagation();document.getElementById('notifPanel').classList.toggle('open')});
+document.addEventListener('click',()=>document.getElementById('notifPanel').classList.remove('open'));
+
+const clients=[
+  {name:'Clinica VET Patas Saudaveis',seg:'VET',regime:'SN',done:8,total:8,status:'ok',action:'—',docs:['NFs servico','NFs compra','Extrato','Comprovantes','DAS pago','Folha','Pro-labore','Informe rend.'],docStatus:[1,1,1,1,1,1,1,1]},
+  {name:'Dra. Camila Oliveira',seg:'VET',regime:'SN',done:6,total:8,status:'pend',action:'Cobrou hoje 9h',docs:['NFs servico','NFs compra','Extrato','Comprovantes','DAS pago','Folha','Pro-labore','Informe rend.'],docStatus:[1,1,1,1,1,1,0,0]},
+  {name:'Pet Shop Mundo Animal',seg:'PET',regime:'SN',done:8,total:8,status:'ok',action:'—',docs:['NFs servico','NFs compra','Extrato','Comprovantes','DAS pago','Folha','Pro-labore','Informe rend.'],docStatus:[1,1,1,1,1,1,1,1]},
+  {name:'Padaria Sao Jorge',seg:'Comercio',regime:'SN',done:5,total:8,status:'pend',action:'2a cobranca ontem',docs:['NFs servico','NFs compra','Extrato','Comprovantes','DAS pago','Folha','Pro-labore','Informe rend.'],docStatus:[1,1,1,1,1,0,0,0]},
+  {name:'Pet Shop Amigo Fiel',seg:'PET',regime:'LP',done:0,total:8,status:'late',action:'Escalar — ligar',docs:['NFs servico','NFs compra','Extrato','Comprovantes','DARF','Folha','Pro-labore','Balancete'],docStatus:[0,0,0,0,0,0,0,0]},
+  {name:'Auto Pecas Central',seg:'Comercio',regime:'LP',done:2,total:8,status:'late',action:'Escalar',docs:['NFs servico','NFs compra','Extrato','Comprovantes','DARF','Folha','Pro-labore','Balancete'],docStatus:[1,1,0,0,0,0,0,0]},
+  {name:'Clinica Vet Happy Dog',seg:'VET',regime:'LP',done:7,total:8,status:'pend',action:'Cobrou hoje 10h',docs:['NFs servico','NFs compra','Extrato','Comprovantes','DARF','Folha','Pro-labore','Balancete'],docStatus:[1,1,1,1,1,1,1,0]},
+  {name:'Maria Silva',seg:'MEI',regime:'MEI',done:3,total:3,status:'ok',action:'—',docs:['NFs servico','Extrato','DAS'],docStatus:[1,1,1]},
+  {name:'Barbearia Corte Certo',seg:'Servico',regime:'SN',done:8,total:8,status:'ok',action:'—',docs:['NFs servico','NFs compra','Extrato','Comprovantes','DAS pago','Folha','Pro-labore','Informe rend.'],docStatus:[1,1,1,1,1,1,1,1]},
+  {name:'Farmacia VetMais',seg:'VET',regime:'SN',done:4,total:8,status:'pend',action:'1a cobranca enviada',docs:['NFs servico','NFs compra','Extrato','Comprovantes','DAS pago','Folha','Pro-labore','Informe rend.'],docStatus:[1,1,1,1,0,0,0,0]},
+  {name:'Consultorio Dr. Rafael',seg:'Medico',regime:'LP',done:8,total:8,status:'ok',action:'—',docs:['NFs servico','NFs compra','Extrato','Comprovantes','DARF','Folha','Pro-labore','Balancete'],docStatus:[1,1,1,1,1,1,1,1]},
+  {name:'Grafica Express',seg:'Comercio',regime:'SN',done:1,total:8,status:'late',action:'3a cobranca',docs:['NFs servico','NFs compra','Extrato','Comprovantes','DAS pago','Folha','Pro-labore','Informe rend.'],docStatus:[1,0,0,0,0,0,0,0]},
+  {name:'Studio Mkt Digital',seg:'Servico',regime:'SN',done:8,total:8,status:'ok',action:'—',docs:['NFs servico','NFs compra','Extrato','Comprovantes','DAS pago','Folha','Pro-labore','Informe rend.'],docStatus:[1,1,1,1,1,1,1,1]},
+  {name:'Agropet Bicho Feliz',seg:'PET',regime:'SN',done:5,total:8,status:'pend',action:'2a cobranca hoje',docs:['NFs servico','NFs compra','Extrato','Comprovantes','DAS pago','Folha','Pro-labore','Informe rend.'],docStatus:[1,1,1,0,1,1,0,0]},
+  {name:'Banho e Tosa Premium',seg:'PET',regime:'LP',done:1,total:8,status:'late',action:'Escalar',docs:['NFs servico','NFs compra','Extrato','Comprovantes','DARF','Folha','Pro-labore','Balancete'],docStatus:[1,0,0,0,0,0,0,0]},
+];
+
+const segClass={VET:'seg-vet',PET:'seg-pet','Comercio':'seg-com','Servico':'seg-srv',MEI:'seg-mei','Medico':'seg-med'};
+const pillMap={ok:'p-ok',pend:'p-w',late:'p-r'};
+const pillText={ok:'Completo',pend:'Pendente',late:'Atrasado'};
+const regPill={SN:'p-b',LP:'p-p',MEI:'p-n'};
+let currentFilter='all';
+
+function filterDocs(f,btn){
+  if(btn){currentFilter=f;document.querySelectorAll('#docFilters .flt').forEach(b=>b.classList.remove('on'));btn.classList.add('on')}
+  else currentFilter=f;
+  renderDocs();
+}
+function renderDocs(){
+  const q=(document.getElementById('docSearch').value||'').toLowerCase();
+  const tbody=document.getElementById('docTbody');tbody.innerHTML='';
+  clients.forEach((c,i)=>{
+    if(currentFilter!=='all'&&c.status!==currentFilter) return;
+    if(q&&!c.name.toLowerCase().includes(q)) return;
+    const pct=Math.round(c.done/c.total*100);
+    const barColor=c.status==='ok'?'var(--ok)':c.status==='pend'?'var(--ac)':'var(--r)';
+    const isCrit=c.status==='late'&&c.done<=1;
+    const tr=document.createElement('tr');tr.className='expandable';
+    if(isCrit) tr.style.background='var(--rl)';
+    tr.innerHTML=`<td class="bold" ${isCrit?'style="color:var(--r)"':''}>${c.name}</td>
+      <td><span class="seg ${segClass[c.seg]||''}">${c.seg}</span></td>
+      <td><span class="pill ${regPill[c.regime]}">${c.regime}</span></td>
+      <td><div class="bar-row"><div class="bar"><div class="bar-fill" style="width:${pct}%;background:${barColor}"></div></div><span class="bar-num">${c.done}/${c.total}</span></div></td>
+      <td><span class="pill ${pillMap[c.status]}">${pillText[c.status]}</span></td>
+      <td style="font-size:12px;${c.status==='late'?'color:var(--r);font-weight:600':''}">${c.action}</td>`;
+    tr.addEventListener('click',()=>toggleDetail(i));
+    tbody.appendChild(tr);
+    const dr=document.createElement('tr');dr.className='detail-row';dr.id='detail-'+i;
+    let dh='<td colspan="6"><div class="detail-grid">';
+    c.docs.forEach((d,j)=>{const s=c.docStatus[j];dh+=`<div class="doc-line ${s?'ok':'miss'}"><div class="ind"></div>${d}</div>`});
+    dh+='</div></td>';dr.innerHTML=dh;tbody.appendChild(dr);
+  });
+}
+function toggleDetail(i){document.getElementById('detail-'+i).classList.toggle('show')}
+renderDocs();
+
+const cliData=[
+  {name:'Clinica VET Patas Saudaveis',seg:'VET',regime:'SN',since:'Jan/2024',hon:'R$ 1.800',docs:'8/8',st:'ok'},
+  {name:'Dra. Camila Oliveira',seg:'VET',regime:'SN',since:'Mar/2024',hon:'R$ 1.200',docs:'6/8',st:'pend'},
+  {name:'Pet Shop Mundo Animal',seg:'PET',regime:'SN',since:'Jun/2023',hon:'R$ 1.500',docs:'8/8',st:'ok'},
+  {name:'Pet Shop Amigo Fiel',seg:'PET',regime:'LP',since:'Nov/2022',hon:'R$ 2.400',docs:'0/8',st:'late'},
+  {name:'Padaria Sao Jorge',seg:'Comercio',regime:'SN',since:'Mai/2024',hon:'R$ 980',docs:'5/8',st:'pend'},
+  {name:'Auto Pecas Central',seg:'Comercio',regime:'LP',since:'Ago/2023',hon:'R$ 2.100',docs:'2/8',st:'late'},
+  {name:'Consultorio Dr. Rafael',seg:'Medico',regime:'LP',since:'Jan/2025',hon:'R$ 2.800',docs:'8/8',st:'ok'},
+  {name:'Barbearia Corte Certo',seg:'Servico',regime:'SN',since:'Fev/2024',hon:'R$ 890',docs:'8/8',st:'ok'},
+  {name:'Studio Mkt Digital',seg:'Servico',regime:'SN',since:'Jul/2024',hon:'R$ 750',docs:'8/8',st:'ok'},
+  {name:'Agropet Bicho Feliz',seg:'PET',regime:'SN',since:'Set/2024',hon:'R$ 1.100',docs:'5/8',st:'pend'},
+  {name:'Maria Silva',seg:'MEI',regime:'MEI',since:'Dez/2024',hon:'R$ 190',docs:'3/3',st:'ok'},
+  {name:'Farmacia VetMais',seg:'VET',regime:'SN',since:'Abr/2025',hon:'R$ 1.600',docs:'4/8',st:'pend'},
+  {name:'Banho e Tosa Premium',seg:'PET',regime:'LP',since:'Out/2023',hon:'R$ 1.950',docs:'1/8',st:'late'},
+  {name:'Grafica Express',seg:'Comercio',regime:'SN',since:'Mar/2025',hon:'R$ 1.100',docs:'1/8',st:'late'},
+];
+let cliFilter='todos';
+function switchCliTab(f,el){
+  cliFilter=f;document.querySelectorAll('#cliTabs .tab-item').forEach(t=>t.classList.remove('on'));el.classList.add('on');renderCli();
+}
+function renderCli(){
+  const segMap={pet:['PET','VET'],com:['Comercio'],srv:['Servico'],med:['Medico'],mei:['MEI']};
+  const tb=document.getElementById('cliTbody');tb.innerHTML='';
+  cliData.forEach(c=>{
+    if(cliFilter!=='todos'&&segMap[cliFilter]&&!segMap[cliFilter].includes(c.seg)) return;
+    const isCrit=c.st==='late';
+    tb.innerHTML+=`<tr ${isCrit?'style="background:var(--rl)"':''}>
+      <td class="bold" ${isCrit?'style="color:var(--r)"':''}>${c.name}</td>
+      <td><span class="seg ${segClass[c.seg]||''}">${c.seg}</span></td>
+      <td><span class="pill ${regPill[c.regime]}">${c.regime}</span></td>
+      <td class="mono">${c.since}</td><td class="mono">${c.hon}</td><td class="mono">${c.docs}</td>
+      <td><span class="pill ${pillMap[c.st]}">${pillText[c.st]}</span></td></tr>`;
+  });
+}
+renderCli();
+
+const msgs=[
+  {f:'in',t:'Ola Dra. Camila! Aqui e a assistente da Inside Contabilidade.',h:'09:01'},
+  {f:'in',t:'Faltam 2 documentos de 10/2026:\n\nComprovante de pro-labore\nInforme de rendimentos\n\nConsegue enviar ate sexta?',h:'09:01'},
+  {f:'out',t:'Oi! O extrato eu mandei ontem, nao chegou?',h:'09:15'},
+  {f:'in',t:'Chegou sim, Dra. Ja esta salvo.\n\nSo faltam esses 2. Pode ser foto mesmo.',h:'09:15'},
+  {f:'out',t:'Ta bom, vou mandar o pro-labore agora',h:'09:16'},
+  {f:'out',t:'',h:'09:16',file:'pro_labore_outubro_2026.pdf'},
+  {f:'in',t:'Recebi.\n\nPro-labore Dra. Camila Oliveira\nR$ 8.500,00 — Out/2026\nSalvo: Dra Camila/10-2026/Pessoal\n\nAgora so falta o Informe de rendimentos.',h:'09:16'},
+  {f:'out',t:'Pego com meu banco amanha',h:'09:18'},
+  {f:'in',t:'Combinado. Te lembro amanha 10h.\n\nNFs servico — ok\nNFs compra — ok\nExtrato — ok\nComprovantes — ok\nDAS — ok\nFolha — ok\nPro-labore — ok\nInforme rend. — pendente',h:'09:18'},
+  {f:'out',t:'Quando vence meu DAS?',h:'09:20'},
+  {f:'in',t:'DAS Nov: 20/Nov — R$ 1.847,30\nQuer que eu envie o boleto?',h:'09:20'},
+  {f:'out',t:'Manda!',h:'09:21'},
+  {f:'in',t:'',h:'09:21',file:'DAS_Nov2026_DraCamilaOliveira.pdf'},
+  {f:'in',t:'Pronto. Qualquer duvida pode mandar.',h:'09:21'},
+];
+function startChat(){
+  const f=document.getElementById('chatF');f.innerHTML='';
+  msgs.forEach((m,i)=>{setTimeout(()=>{
+    const d=document.createElement('div');d.className='msg msg-'+m.f;
+    let h=m.file?'<div class="msg-file">'+m.file+'</div>':m.t.replace(/\n/g,'<br>');
+    h+='<div class="msg-time">'+m.h+'</div>';d.innerHTML=h;
+    f.appendChild(d);f.scrollTop=f.scrollHeight;
+  },i*500)});
+}
+</script>
+</body>
+</html>
